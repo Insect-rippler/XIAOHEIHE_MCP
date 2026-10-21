@@ -4,6 +4,7 @@ import { paragraphsToHtml, publishArticle } from "../src/services/publish.js";
 
 function fakeClient(): XhhClient {
   return {
+    searchEditorTopics: async () => ({ result: { search_result: [{ name: "盒友杂谈", topic_id: 7214 }] } }),
     listEditorTopics: async () => ({ result: { topic_list: [{ name: "盒友杂谈", topic_id: 7214 }] } }),
     publishPost: vi.fn(async () => ({ status: "ok", link_id: 194357400 })),
     http: {},

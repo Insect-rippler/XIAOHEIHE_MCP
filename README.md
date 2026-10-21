@@ -104,7 +104,16 @@ npm run build && npm run serve:http   # 默认 http://127.0.0.1:8757/mcp
 | 图文 | 27 | `[{type:"text"},{type:"img",url,width,height}]` |
 | 文章 | 11 | `[{type:"html",text:"<p>…</p>"}]`，空行分段 |
 
-图片先经 `upload/info` → `upload/token` → COS 签名 PUT → `upload/callback` 四步上传，再 `POST /bbs/app/api/link/post`。社区用 `community` 名称（解析编辑器推荐列表）或直接给 `topicIds`。
+图片先经 `upload/info` → `upload/token` → COS 签名 PUT → `upload/callback` 四步上传，再 `POST /bbs/app/api/link/post`。社区用 `community` 名称（经编辑器搜索接口精确匹配）或直接给 `topicIds`。
+
+查社区 ID：
+
+```bash
+npx tsx src/index.ts topic 盒友杂谈
+# { "query": "盒友杂谈", "count": 40, "results": [{ "name": "盒友杂谈", "topicId": 7214 }, ...] }
+```
+
+只接受**精确名称匹配**，避免模糊命中发到别的社区；找不到时会返回相近结果供你确认。
 
 ### 验证码
 

@@ -7,6 +7,7 @@ import { assertNotChallenged, captchaError, noteCaptcha, resetCaptcha } from "..
 
 function fakeClient(overrides: Partial<Record<keyof XhhClient, unknown>> = {}): XhhClient {
   return {
+    searchEditorTopics: async () => ({ result: { search_result: [{ name: "盒友杂谈", topic_id: 7214 }] } }),
     listEditorTopics: async () => ({
       result: { topic_list: [{ name: "盒友杂谈", topic_id: 7214 }, { name: "数码硬件", topic_id: 18745 }] },
     }),
@@ -43,6 +44,24 @@ describe("publishImageText", () => {
   it("rejects an unknown community with the available names", async () => {
     await expect(
       publishImageText(fakeClient(), { title: "t", content: "c", community: "不存在的社区", dryRun: true }),
+    ).rejects.toMatchObject({ kind: "config" });
+  });
+
+  it("resolves a community through the search endpoint", async () => {
+    const searched = vi.fn(async () => ({ result: { search_result: [{ name: "盒友杂谈", topic_id: 7214 }] } }));
+    const client = fakeClient({ searchEditorTopics: searched, listEditorTopics: async () => ({ result: {} }) });
+    const result = await publishImageText(client, { title: "t", content: "c", community: "盒友杂谈", dryRun: true });
+    expect(result.request?.topic_ids).toBe("7214");
+    expect(searched).toHaveBeenCalledOnce();
+  });
+
+  it("does not silently pick a fuzzy match", async () => {
+    const client = fakeClient({
+      searchEditorTopics: async () => ({ result: { search_result: [{ name: "盒友杂谈", topic_id: 7214 }] } }),
+      listEditorTopics: async () => ({ result: {} }),
+    });
+    await expect(
+      publishImageText(client, { title: "t", content: "c", community: "盒友", dryRun: true }),
     ).rejects.toMatchObject({ kind: "config" });
   });
 

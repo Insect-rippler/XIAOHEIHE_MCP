@@ -63,6 +63,18 @@ async function main(): Promise<void> {
       print(session);
       return;
     }
+    case "topic": {
+      const keyword = rest[0];
+      if (!keyword) throw new XhhError("config", "用法：topic <社区名>");
+      const response = await makeClient().searchEditorTopics(keyword);
+      const hits = response.result?.search_result ?? [];
+      print({
+        query: keyword,
+        count: hits.length,
+        results: hits.slice(0, 10).map((topic) => ({ name: topic.name, topicId: topic.topic_id })),
+      });
+      return;
+    }
     case "import": {
       const fromIndex = rest.indexOf("--from");
       const source = fromIndex >= 0 ? rest[fromIndex + 1] : "";

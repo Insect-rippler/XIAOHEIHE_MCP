@@ -29,22 +29,29 @@ async function resolveTopicIds(
 ): Promise<number[]> {
   if (options.topicIds?.length) return options.topicIds;
   if (!options.community) return [];
-  const response = await client.listEditorTopics();
-  const list = response.result?.topic_list ?? [];
+
   const target = options.community.trim();
-  const hit = list.find((topic) => (topic.name ?? "").trim() === target);
-  if (!hit?.topic_id) {
-    const available = list
-      .slice(0, 12)
-      .map((topic) => topic.name)
-      .filter(Boolean)
-      .join("、");
-    throw new XhhError(
-      "config",
-      `社区「${options.community}」不在编辑器推荐列表中。可用：${available}；也可以直接传 topicIds`,
-    );
-  }
-  return [hit.topic_id];
+
+  // The editor's search endpoint resolves any community name, not just the recommended few.
+  // Only an exact name match is accepted: a fuzzy hit could publish to the wrong community.
+  const search = await client.searchEditorTopics(target);
+  const hits = search.result?.search_result ?? [];
+  const exact = hits.find((topic) => (topic.name ?? "").trim() === target);
+  if (exact?.topic_id) return [exact.topic_id];
+
+  const list = (await client.listEditorTopics()).result?.topic_list ?? [];
+  const fallback = list.find((topic) => (topic.name ?? "").trim() === target);
+  if (fallback?.topic_id) return [fallback.topic_id];
+
+  const available = hits
+    .slice(0, 8)
+    .map((topic) => topic.name)
+    .filter(Boolean)
+    .join("、");
+  throw new XhhError(
+    "config",
+    `社区「${options.community}」没有匹配到。${available ? `相近结果：${available}。` : ""}请改用更准确的名称，或直接传 topicIds`,
+  );
 }
 
 /** Publish one image-text post. Images are uploaded first, then the post is created. */

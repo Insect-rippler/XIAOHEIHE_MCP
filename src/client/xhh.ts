@@ -150,6 +150,16 @@ export class XhhClient {
     return this.http.get("/bbs/app/api/post_editor/topic_selection/index", { webVersion: "3.0" });
   }
 
+  /** Search communities by name; returns exact and fuzzy matches. */
+  searchEditorTopics(keyword: string): Promise<{
+    result?: { search_result?: Array<{ name?: string; topic_id?: number; search_type?: string }> };
+  }> {
+    return this.http.get("/bbs/app/api/post_editor/topic_selection/search", {
+      webVersion: "3.0",
+      query: { q: keyword, only_hashtag: 0 },
+    });
+  }
+
   /** Publish a post (image-text) with an already-uploaded image URL. */
   publishPost(form: Record<string, string | number>): Promise<{ status: string; link_id?: number | string; msg?: string }> {
     return this.http.postForm("/bbs/app/api/link/post", { webVersion: "3.0", form });
